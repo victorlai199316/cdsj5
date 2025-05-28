@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>獎項資料收集 </title>
+    <style>
+        body { font-family: 'Arial', '微軟正黑體', sans-serif; margin: 0; background-color: #f4f4f4; color: #333; }
+        /* 當彈窗激活時，禁止body滾動 */
+        body.popup-active {
+            overflow: hidden;
+        }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; /* 給上下留白 */}
+        h1, h2, h3 { text-align: center; color: #2c3e50; }
+        h2 { margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; text-align: left;}
+        h3 { margin-top: 20px; margin-bottom: 10px; font-size: 1.1em; text-align: left;}
+        label { display: block; margin-top: 10px; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"], input[type="date"], select { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .submit-button, .action-button { background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; margin-top: 10px; margin-right: 10px; transition: background-color 0.3s ease; }
+        .submit-button:hover, .action-button:hover { background-color: #2980b9; }
+        .submit-button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        .delete-button { background-color: #e74c3c; }
+        .delete-button:hover { background-color: #c0392b; }
+        .form-group { margin-bottom: 15px; position: relative; }
+        .inline-group { display: flex; gap: 20px; flex-wrap: wrap; /* 允許換行 */ }
+        .inline-group > div { flex: 1; min-width: 200px; /* 響應式調整 */}
+        #message { margin-top: 20px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
+        #message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        #message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .hidden { display: none !important; }
+
+        .reference-icon { cursor: pointer; font-size: 1.2em; color: #3498db; margin-left: 10px; display: inline-block; vertical-align: middle; }
+
+        /* ====== 彈出層遮罩 ====== */
+        .popup-overlay {
+            display: none; /* 初始隱藏 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* 半透明黑色背景 */
+            z-index: 999; /* 確保在內容之上，彈窗之下 */
+        }
+        .popup-overlay.active {
+            display: block;
+        }
+
+        /* ====== 參考資料彈出層樣式 (改為 fixed) ====== */
+        .reference-popup {
+            display: none; /* 初始隱藏 */
+            position: fixed; /* 改為 fixed，相對於視窗定位 */
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            padding: 20px;
+            padding-top: 40px; /* 為關閉按鈕留出空間 */
+            border-radius: 8px;
+            z-index: 1000; /* 確保在遮罩層之上 */
+            width: 90%;
+            max-width: 700px; /* 最大寬度 */
+            max-height: 80vh; /* 最大高度，超出可滾動 */
+            overflow-y: auto;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%); /* 水平垂直居中 */
+            box-sizing: border-box;
+        }
+        .reference-popup.active {
+            display: block;
+        }
+        .reference-popup h3, .reference-popup h4 { margin-top: 0; margin-bottom: 10px; color: #2c3e50; text-align: left;}
+        .award-reference-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; font-size: 0.9em; }
+        .award-reference-table th, .award-reference-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .award-reference-table th { background-color: #f2f2f2; font-weight: bold; }
+        .close-popup-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 2em; /* 增大關閉按鈕 */
+            color: #888;
+            border: none;
+            background: none;
+            padding: 0;
+            line-height: 1;
+        }
+        .close-popup-button:hover { color: #333; }
+
+        .student-entry { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #f9f9f9; }
+        .student-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <!-- 新增：彈出層遮罩 -->
+    <div id="popupOverlay" class="popup-overlay"></div>
+
+    <div class="container">
+        <h1>獎項資料收集 </h1>
+        <form id="awardForm">
+            <!-- 表單內容與之前相同，此處省略以節省篇幅 -->
+            <h2>一、比賽資訊</h2>
+            <div class="form-group">
+                <label for="activityName">活動名稱：</label>
+                <input type="text" id="activityName" name="activityName" required>
+            </div>
+            <div class="inline-group">
+                <div class="form-group">
+                    <label for="activityDate">比賽日期：</label>
+                    <input type="date" id="activityDate" name="activityDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="activityLocation">比賽地點：</label>
+                    <select id="activityLocation" name="activityLocation" required>
+                        <option value="">--請選擇--</option>
+                        <option value="校內">校內</option><option value="本澳">本澳</option>
+                        <option value="大灣區">大灣區</option><option value="全國">全國</option>
+                        <option value="國際">國際</option>
+                    </select>
+                </div>
+            </div>
+
+            <h2>二、學生獲獎記錄</h2>
+            <div id="studentEntriesContainer"></div>
+            <button type="button" id="addStudentButton" class="action-button">＋ 新增學生獲獎記錄</button>
+
+ 
+            <button type="submit" id="submitButton" class="submit-button">提交所有資料</button>
+            <div id="message"></div>
+        </form>
+    </div>
+
+    <!-- 參考評級彈出層 (HTML 結構與之前相同) -->
+    <div id="referencePopup" class="reference-popup">
+        <button type="button" id="closePopupButton" class="close-popup-button" title="關閉">×</button>
+        <h3>參考評級嘉獎方法</h3>
+        <h4>本澳比賽</h4>
+        <table class="award-reference-table"><thead><tr><th>獎項等級</th><th>描述 / 例子</th><th>建議獎勵</th></tr></thead><tbody><tr><td>第一級獎勵</td><td>獲選代表學校參賽，順利完成，表現值得楷模</td><td>優點 0-1 個</td></tr><tr><td>第二級獎勵</td><td>季軍、第三名等</td><td>優點 2-3 個</td></tr><tr><td>第三級獎勵</td><td>亞軍、第二名等</td><td>優點 2-3 個，最多小功 1 個</td></tr><tr><td>第四級獎勵</td><td>冠軍、第一名等</td><td>小功 1 個或以上</td></tr></tbody></table>
+        <h4>境外比賽的校內嘉獎</h4>
+        <table class="award-reference-table"><thead><tr><th>獎項等級</th><th>描述 / 例子</th><th>建議獎勵</th></tr></thead><tbody><tr><td>第一級獎勵</td><td>獲選代表學校/特區參賽，順利完成，表現值得楷模</td><td>優點 2-3 個</td></tr><tr><td>第二級獎勵</td><td>季軍、第三名等</td><td>優點 3 個，小功 1 個</td></tr><tr><td>第三級獎勵</td><td>亞軍、第二名等</td><td>小功 1-2 個</td></tr><tr><td>第四級獎勵</td><td>冠軍、第一名等</td><td>小功 2 個或以上</td></tr></tbody></table>
+    </div>
+
+    <script>
+        const form = document.getElementById('awardForm');
+        const submitButton = document.getElementById('submitButton');
+        const messageDiv = document.getElementById('message');
+        const addStudentButton = document.getElementById('addStudentButton');
+        const studentEntriesContainer = document.getElementById('studentEntriesContainer');
+
+        const referenceToggleIconInTemplate = true;
+        const referencePopup = document.getElementById('referencePopup');
+        const closePopupButton = document.getElementById('closePopupButton');
+        const popupOverlay = document.getElementById('popupOverlay'); // ****** 新增：獲取遮罩層 ******
+
+        let studentEntryCount = 0;
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw2vtdxkuRDQKjF4Cy9CzCD91f9CND-e8gGHQfkM-nsrWUwzTpiOpfF_ku8bRFrhaLr/exec'; // ****** 請替換為你的 URL ******
+
+        function createStudentEntryElement(index) {
+            studentEntryCount++;
+            const entryDiv = document.createElement('div');
+            entryDiv.classList.add('student-entry');
+            entryDiv.setAttribute('id', `studentEntry-${index}`);
+            entryDiv.innerHTML = `
+                <div class="student-entry-header">
+                    <h3>學生 ${studentEntryCount}</h3>
+                    <button type="button" class="action-button delete-button" onclick="removeStudentEntry(${index})">移除此學生</button>
+                </div>
+                <div class="form-group">
+                    <label for="studentName-${index}">學生姓名：</label>
+                    <input type="text" id="studentName-${index}" name="studentName" required>
+                </div>
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="studentClass-${index}">學生班級：</label>
+                        <input type="text" id="studentClass-${index}" name="studentClass" placeholder="例如：ESP1A/S1A" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="studentId-${index}">學生學號：</label>
+                        <input type="text" id="studentId-${index}" name="studentId" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="teacherName-${index}">指導老師：</label>
+                    <input type="text" id="teacherName-${index}" name="teacherName" required>
+                </div>
+                <div class="form-group">
+                    <label for="awardName-${index}">獎項名稱：</label>
+                    <select id="awardName-${index}" name="awardName" class="awardNameSelect" data-index="${index}" required>
+                        <option value="">--請選擇--</option>
+                        <option value="冠軍">冠軍</option><option value="亞軍">亞軍</option><option value="季軍">季軍</option>
+                        <option value="殿軍">殿軍</option><option value="金獎">金獎</option><option value="銀獎">銀獎</option>
+                        <option value="銅獎">銅獎</option><option value="優異獎">優異獎</option><option value="良好獎">良好獎</option>
+                        <option value="參與獎">參與獎</option><option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-group hidden" id="otherAwardNameGroup-${index}">
+                    <label for="otherAwardName-${index}">請輸入其他獎項名稱：</label>
+                    <input type="text" id="otherAwardName-${index}" name="otherAwardName">
+                </div>
+                <div class="form-group">
+                    <label for="activityLevel-${index}">活動評級：</label>
+                    <select id="activityLevel-${index}" name="activityLevel" required>
+                        <option value="">--請選擇--</option>
+                        <option value="一級">一級</option>
+                        <option value="二級">二級</option>
+                        <option value="三級">三級</option>
+                        <option value="四級">四級</option>
+                        <!-- ****** 移除了 "不適用" 選項 ****** -->
+                    </select>
+                    ${referenceToggleIconInTemplate ? `<span class="reference-icon" data-popup-target="referencePopup" title="查看參考評級資料">ⓘ</span>` : ''}
+                </div>
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="schoolRewardType-${index}">學校獎勵：</label>
+                        <select id="schoolRewardType-${index}" name="schoolRewardType" required>
+                            <option value="">--請選擇--</option>
+                            <option value="優點">優點</option><option value="小功">小功</option><option value="大功">大功</option>
+                            <option value="嘉獎">嘉獎</option><option value="無">無</option><option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="schoolRewardQuantity-${index}">獎勵數量：</label>
+                        <input type="number" id="schoolRewardQuantity-${index}" name="schoolRewardQuantity" min="0" value="1" required>
+                    </div>
+                </div>
+            `;
+            return entryDiv;
+        }
+
+        // ****** 修改：打開和關閉彈出層的函數 ******
+        function openReferencePopup() {
+            if (referencePopup) referencePopup.classList.add('active');
+            if (popupOverlay) popupOverlay.classList.add('active');
+            document.body.classList.add('popup-active'); // 禁止背景滾動
+        }
+
+        function closeReferencePopup() {
+            if (referencePopup) referencePopup.classList.remove('active');
+            if (popupOverlay) popupOverlay.classList.remove('active');
+            document.body.classList.remove('popup-active'); // 恢復背景滾動
+        }
+
+        function toggleReferencePopup(event) {
+            event.stopPropagation();
+            // const targetPopupId = event.target.dataset.popupTarget; // 此處我們只有一個彈出層
+            // const targetPopup = document.getElementById(targetPopupId);
+            if (referencePopup && referencePopup.classList.contains('active')) {
+                closeReferencePopup();
+            } else {
+                openReferencePopup();
+            }
+        }
+
+        if (closePopupButton) {
+            closePopupButton.addEventListener('click', closeReferencePopup);
+        }
+        if (popupOverlay) { // 點擊遮罩層關閉彈窗
+            popupOverlay.addEventListener('click', closeReferencePopup);
+        }
+
+        // 點擊彈出層內部不應關閉 (防止事件冒泡)
+        if(referencePopup) {
+            referencePopup.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        }
+        
+        // 其他 JavaScript 函數 (addStudentEntry, removeStudentEntry, etc.) 保持不變
+        // 為節省篇幅，省略未改變的 JS 函數，請參考上一個版本
+        function addStudentEntry() {
+            const newIndex = Date.now();
+            const studentEntryElement = createStudentEntryElement(newIndex);
+            studentEntriesContainer.appendChild(studentEntryElement);
+            initializeDynamicEventListeners(studentEntryElement);
+        }
+
+        window.removeStudentEntry = function(index) {
+            const entryToRemove = document.getElementById(`studentEntry-${index}`);
+            if (entryToRemove) {
+                entryToRemove.remove();
+                 // 更新學生編號（可選）
+                 let currentStudentNumber = 1;
+                 const headers = studentEntriesContainer.querySelectorAll('.student-entry-header h3');
+                 headers.forEach(header => {
+                     header.textContent = `學生 ${currentStudentNumber++}`;
+                 });
+                 studentEntryCount = studentEntriesContainer.children.length; // 更新總數
+            }
+        }
+
+        function initializeDynamicEventListeners(parentElement) {
+            const awardSelects = parentElement.querySelectorAll('.awardNameSelect');
+            awardSelects.forEach(select => {
+                select.addEventListener('change', handleAwardNameChange);
+            });
+            if (referenceToggleIconInTemplate) {
+                const icons = parentElement.querySelectorAll('.reference-icon[data-popup-target="referencePopup"]');
+                icons.forEach(icon => {
+                    icon.addEventListener('click', toggleReferencePopup); // 改為調用 toggleReferencePopup
+                });
+            }
+        }
+        
+        function handleAwardNameChange(event) {
+            const selectElement = event.target;
+            const index = selectElement.dataset.index;
+            const otherGroup = document.getElementById(`otherAwardNameGroup-${index}`);
+            const otherInput = document.getElementById(`otherAwardName-${index}`);
+            if (selectElement.value === '其他') {
+                otherGroup.classList.remove('hidden');
+                otherInput.required = true;
+            } else {
+                otherGroup.classList.add('hidden');
+                otherInput.required = false;
+                otherInput.value = '';
+            }
+        }
+
+        addStudentButton.addEventListener('click', addStudentEntry);
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            if (studentEntriesContainer.children.length === 0) {
+                messageDiv.textContent = '請至少添加一位學生的獲獎記錄。';
+                messageDiv.className = 'error';
+                return;
+            }
+            if (!form.checkValidity()) {
+                 messageDiv.textContent = '請填寫所有必填欄位。';
+                 messageDiv.className = 'error';
+                 form.querySelector(':invalid')?.focus();
+                 return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = '提交中...';
+            messageDiv.textContent = '';
+            messageDiv.className = '';
+
+            const formData = new FormData(form);
+            
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                if (data.status === 'success') {
+                    messageDiv.textContent = data.message || '資料提交成功！';
+                    messageDiv.className = 'success';
+                    form.reset();
+                    studentEntriesContainer.innerHTML = '';
+                    studentEntryCount = 0;
+                    addStudentEntry(); // 重新添加一個空白學生記錄
+                    closeReferencePopup(); // 如果彈窗是打開的，則關閉它
+                } else {
+                    messageDiv.textContent = '提交失敗：' + (data.message || '未知錯誤，請檢查Apps Script日誌。');
+                    messageDiv.className = 'error';
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                messageDiv.textContent = '提交過程中發生錯誤: ' + error.message;
+                messageDiv.className = 'error';
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = '提交所有資料';
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            addStudentEntry(); // 頁面加載時自動添加一個學生記錄
+        });
+
+    </script>
+</body>
+</html>
