@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>獎項資料收集表 (可折疊參考)</title>
+    <style>
+        body {
+            font-family: 'Arial', '微軟正黑體', sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: auto;
+            position: relative; /* 為了彈出層定位 */
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        h2 {
+             margin-top: 25px;
+             margin-bottom: 10px;
+             color: #333;
+             border-bottom: 1px solid #eee;
+             padding-bottom: 5px;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .submit-button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        .submit-button:hover {
+            background-color: #2980b9;
+        }
+        .submit-button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            position: relative; /* 為了圖示定位 */
+        }
+        .inline-group {
+            display: flex;
+            gap: 20px;
+        }
+        .inline-group > div {
+            flex: 1;
+        }
+        #message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        #message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        #message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .hidden {
+            display: none !important; /* 使用 !important 確保優先級 */
+        }
+
+        /* ====== 新增：參考資料彈出層樣式 ====== */
+        .reference-icon {
+            cursor: pointer;
+            font-size: 1.2em; /* 調整圖示大小 */
+            color: #3498db;
+            margin-left: 10px;
+            display: inline-block; /* 確保和 label 在一行 */
+            vertical-align: middle;
+        }
+        .reference-popup {
+            display: none; /* 初始隱藏 */
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1000; /* 確保在最上層 */
+            width: 90%; /* 或設置一個固定寬度，例如 600px */
+            max-width: 650px;
+            max-height: 70vh; /* 最大高度，超出可滾動 */
+            overflow-y: auto;   /* 內容過長時顯示滾動條 */
+            left: 50%;
+            transform: translateX(-50%); /* 水平居中 */
+            top: 70px; /* 根據需要調整，相對於 .container */
+        }
+        .reference-popup.active {
+            display: block;
+        }
+        .reference-popup h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .award-reference-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em; /* 表格內字體可以小一點 */
+        }
+        .award-reference-table th,
+        .award-reference-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .award-reference-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .close-popup-button { /* 新增關閉按鈕樣式 */
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.5em;
+            color: #888;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+        .close-popup-button:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>獎項資料收集表</h1>
+        <form id="awardForm">
+            <!-- ... 其他表單欄位 ... -->
+            <div class="form-group">
+                <label for="studentName">學生姓名：</label>
+                <input type="text" id="studentName" name="studentName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="studentClass">學生班級：</label>
+                <input type="text" id="studentClass" name="studentClass" placeholder="例如：ESP1A/S1A" required>
+            </div>
+
+            <div class="form-group">
+                <label for="studentId">學生學號：</label>
+                <input type="text" id="studentId" name="studentId" required>
+            </div>
+
+            <div class="form-group">
+                <label for="activityName">活動名稱：</label>
+                <input type="text" id="activityName" name="activityName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="awardName">獎項名稱：</label>
+                <select id="awardName" name="awardName" required>
+                    <option value="">--請選擇--</option>
+                    <option value="冠軍">冠軍</option>
+                    <option value="亞軍">亞軍</option>
+                    <option value="季軍">季軍</option>
+                    <option value="殿軍">殿軍</option>
+                    <option value="金獎">金獎</option>
+                    <option value="銀獎">銀獎</option>
+                    <option value="銅獎">銅獎</option>
+                    <option value="優異獎">優異獎</option>
+                    <option value="良好獎">良好獎</option>
+                    <option value="參與獎">參與獎</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+
+            <div class="form-group hidden" id="otherAwardNameGroup">
+                <label for="otherAwardName">請輸入其他獎項名稱：</label>
+                <input type="text" id="otherAwardName" name="otherAwardName">
+            </div>
+
+            <div class="form-group">
+                <label for="activityLevel">活動評級：</label>
+                <select id="activityLevel" name="activityLevel" required>
+                    <option value="">--請選擇--</option>
+                    <option value="一級">一級</option>
+                    <option value="二級">二級</option>
+                    <option value="三級">三級</option>
+                    <option value="四級">四級</option>
+                </select>
+                <!-- ====== 新增：參考資料圖示 ====== -->
+                <span id="referenceToggleIcon" class="reference-icon" title="查看參考評級資料">ⓘ</span>
+                 <!-- Unicode i in circle: ⓘ 或者用 FontAwesome 圖示 <i class="fas fa-info-circle"></i> -->
+            </div>
+
+            <!-- ====== 新增：參考評級彈出層 (初始隱藏) ====== -->
+            <div id="referencePopup" class="reference-popup">
+                <button type="button" id="closePopupButton" class="close-popup-button" title="關閉">×</button>
+                <h3>參考評級嘉獎方法</h3>
+                <h4>本澳比賽</h4>
+                <table class="award-reference-table">
+                    <thead>
+                        <tr>
+                            <th>獎項等級</th>
+                            <th>描述 / 例子</th>
+                            <th>建議獎勵 (學術/體藝)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>第一級獎勵</td>
+                            <td>獲得人選代表學校參加校外比賽，能順利完成，雖未獲獎，但其表現值得作為學生的楷模</td>
+                            <td>優點 0-1 個</td>
+                        </tr>
+                        <tr>
+                            <td>第二級獎勵</td>
+                            <td>季軍、第三名，比賽中的第三獎勵</td>
+                            <td>優點 2-3 個</td>
+                        </tr>
+                        <tr>
+                            <td>第三級獎勵</td>
+                            <td>亞軍、第二名，比賽中的第二獎勵</td>
+                            <td>優點 2-3 個，最多小功 1 個</td>
+                        </tr>
+                        <tr>
+                            <td>第四級獎勵</td>
+                            <td>冠軍、第一名，比賽中的最高獎勵</td>
+                            <td>小功 1 個或以上</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>境外比賽的校內嘉獎</h4>
+                <table class="award-reference-table">
+                    <thead>
+                        <tr>
+                            <th>獎項等級</th>
+                            <th>描述 / 例子</th>
+                            <th>建議獎勵 (學術/體藝)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                         <tr>
+                            <td>第一級獎勵</td>
+                            <td>獲得人選代表學校/澳門特區參加境外比賽項目，能順利完成，雖未獲獎，但其表現值得作為學生的楷模</td>
+                            <td>優點 2-3 個</td>
+                        </tr>
+                        <tr>
+                            <td>第二級獎勵</td>
+                            <td>季軍、第三名，比賽中的第三獎勵</td>
+                            <td>優點 3 個，小功 1 個</td>
+                        </tr>
+                        <tr>
+                            <td>第三級獎勵</td>
+                            <td>亞軍、第二名，比賽中的第二獎勵</td>
+                            <td>小功 1-2 個</td>
+                        </tr>
+                        <tr>
+                            <td>第四級獎勵</td>
+                            <td>冠軍、第一名，比賽中的最高獎勵</td>
+                            <td>小功 2 個或以上</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- ====== 參考評級彈出層結束 ====== -->
+
+
+            <div class="form-group">
+                <label for="schoolRewardType">學校給予的獎勵：</label>
+                <select id="schoolRewardType" name="schoolRewardType" required>
+                    <option value="">--請選擇--</option>
+                    <option value="優點">優點</option>
+                    <option value="小功">小功</option>
+                    <option value="大功">大功</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="schoolRewardQuantity">獎勵數量：</label>
+                <input type="number" id="schoolRewardQuantity" name="schoolRewardQuantity" min="0" value="1" required>
+            </div>
+
+            <button type="submit" id="submitButton" class="submit-button">提交資料</button>
+            <div id="message"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('awardForm');
+        const submitButton = document.getElementById('submitButton');
+        const messageDiv = document.getElementById('message');
+        const awardNameSelect = document.getElementById('awardName');
+        const otherAwardNameGroup = document.getElementById('otherAwardNameGroup');
+        const otherAwardNameInput = document.getElementById('otherAwardName');
+
+        // ====== 新增：獲取參考資料相關元素 ======
+        const referenceToggleIcon = document.getElementById('referenceToggleIcon');
+        const referencePopup = document.getElementById('referencePopup');
+        const closePopupButton = document.getElementById('closePopupButton');
+
+
+        // =========================================================================
+        // 重要：將 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL' 替換為你的 Web App URL
+        // =========================================================================
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxov7RVEV6_kNOidHQkvITQ38-BTwYaehD1pIcONB1UVFpogjFPEvPSTh_qLkiJHZzA/exec';
+        // 例如: 'https://script.google.com/macros/s/AKfycbw.../exec'
+
+
+        // ====== 新增：參考資料彈出層的顯示/隱藏邏輯 ======
+        if (referenceToggleIcon && referencePopup) {
+            referenceToggleIcon.addEventListener('click', function(event) {
+                event.stopPropagation(); // 防止事件冒泡到document
+                referencePopup.classList.toggle('active');
+            });
+
+            if (closePopupButton) {
+                closePopupButton.addEventListener('click', function() {
+                    referencePopup.classList.remove('active');
+                });
+            }
+
+            // 點擊彈出層外部區域關閉彈出層
+            document.addEventListener('click', function(event) {
+                // 確保彈出層是打開的，並且點擊的目標不是彈出層本身或其子元素，也不是觸發圖示
+                if (referencePopup.classList.contains('active') &&
+                    !referencePopup.contains(event.target) &&
+                    event.target !== referenceToggleIcon) {
+                    referencePopup.classList.remove('active');
+                }
+            });
+
+            // 點擊彈出層內部不應關閉 (防止事件冒泡)
+            referencePopup.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        }
+
+
+        // 監聽獎項名稱下拉選單的變化
+        awardNameSelect.addEventListener('change', function() {
+            if (this.value === '其他') {
+                otherAwardNameGroup.classList.remove('hidden');
+                otherAwardNameInput.required = true;
+            } else {
+                otherAwardNameGroup.classList.add('hidden');
+                otherAwardNameInput.required = false;
+                otherAwardNameInput.value = '';
+            }
+        });
+
+        // 表單提交事件處理
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            if (!form.checkValidity()) {
+                 messageDiv.textContent = '請填寫所有必填欄位。';
+                 messageDiv.className = 'error';
+                 const firstInvalidField = form.querySelector(':invalid');
+                 if (firstInvalidField) {
+                     firstInvalidField.focus();
+                 }
+                 return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = '提交中...';
+            messageDiv.textContent = '';
+            messageDiv.className = '';
+
+            const formData = new FormData(form);
+            if (formData.get('awardName') === '其他' && formData.get('otherAwardName')) {
+                formData.set('awardName', `其他：${formData.get('otherAwardName')}`);
+            }
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                     throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                if (data.status === 'success') {
+                    messageDiv.textContent = data.message || '資料提交成功！';
+                    messageDiv.className = 'success';
+                    form.reset();
+                    awardNameSelect.dispatchEvent(new Event('change'));
+                } else {
+                    messageDiv.textContent = '提交失敗：' + (data.message || '未知錯誤，請檢查Apps Script日誌。');
+                    messageDiv.className = 'error';
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                messageDiv.textContent = '提交過程中發生錯誤，請檢查網絡或聯繫管理員。 ' + error;
+                messageDiv.className = 'error';
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = '提交資料';
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+             awardNameSelect.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>
